@@ -2,12 +2,12 @@ import os, re, json, io, base64, time, sqlite3
 from datetime import datetime
 import httpx, qrcode, pyotp
 from fastapi import FastAPI, HTTPException, Header, Request, Form
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
 from pydantic import BaseModel
 
 app = FastAPI()
 
-# Автоматически определяем папку, где лежит этот скрипт
+# Автоматически определяем папку, где лежит этот скрипт (динамические пути для хостинга)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(BASE_DIR, "database.sqlite")
 HTML_FILE = os.path.join(BASE_DIR, "dashboard.html")
@@ -21,6 +21,8 @@ AUTH_2FA_SECRET = "33QXNNYICMQA6J7J"
 def init_db():
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
+    
+    # Таблица аккаунтов
     conn.execute('''CREATE TABLE IF NOT EXISTS accounts (
                     id TEXT PRIMARY KEY,
                     alias TEXT,
@@ -29,13 +31,37 @@ def init_db():
                     refresh_token TEXT,
                     exp_date TEXT,
                     is_active INTEGER,
-                    device_id TEXT
+                    device_id TEXT,
+                    created_at TEXT
                 )''')
+    
+    # Таблица базы знаний (заметок)
+    conn.execute('''CREATE TABLE IF NOT EXISTS manual_notes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    topic TEXT,
+                    title TEXT,
+                    content TEXT,
+                    updated_at TEXT
+                )''')
+    
+    # Таблица истории счетов
+    conn.execute('''CREATE TABLE IF NOT EXISTS invoices (
+                    invoice_id TEXT PRIMARY KEY,
+                    date TEXT,
+                    name TEXT,
+                    amount REAL,
+                    email TEXT,
+                    account_alias TEXT,
+                    is_paid INTEGER,
+                    sbp_url TEXT
+                )''')
+
     # Добавляем колонку device_id если база уже была создана без неё
     try:
         conn.execute("ALTER TABLE accounts ADD COLUMN device_id TEXT")
     except:
         pass
+        
     conn.commit()
     conn.close()
 
@@ -65,7 +91,7 @@ async def refresh_fns_session(account_id: str) -> str:
         raise HTTPException(status_code=400, detail="Нет Refresh токена для продления")
 
     refresh_token = acc["refresh_token"]
-    device_id = acc["device_id"] or "3d472ef6-2b44-4e4b-851a-72211c4e75df" # Дефолтный или сохраненный
+    device_id = acc["device_id"] or "3d472ef6-2b44-4e4b-851a-72211c4e75df"
 
     async with httpx.AsyncClient(timeout=20.0) as cl:
         r = await cl.post(
@@ -434,8 +460,6 @@ async def create_inv(p: InvoiceModel, x_api_key: str = Header(None)):
         conn.close()
         return {"status": "ok", "invoice_id": inv_id, "sbp_url": sbp_url, "qr_base64": b64}
 
-from fastapi.responses import StreamingResponse
-
 @app.post("/create-invoice-stream")
 async def create_invoice_stream(p: InvoiceModel):
     async def event_generator():
@@ -457,9 +481,8 @@ async def create_invoice_stream(p: InvoiceModel):
             yield f"data: {json.dumps({'log': f'[{now_t()}] 👤 Активный профиль: {alias} (ID: {acc_id[:8]})'})}\n\n"
 
             yield f"data: {json.dumps({'log': f'[{now_t()}] 🔑 Проверка срока жизни Access Токена...'})}\n\n"
-            temp_logs = []
             token_fns = await get_valid_token(acc_id)
-            
+
             phone = re.sub(r"\D", "", p.client_phone or "")
             payload = {
                 "acquirerId": 833,
