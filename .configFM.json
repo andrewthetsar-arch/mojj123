@@ -1,0 +1,14 @@
+{
+  "showHiddenFiles": true,
+  "leftWindowSort": {
+    "sortBy": "name",
+    "order": "asc"
+  },
+  "rightWindowSort": {
+    "sortBy": "name",
+    "order": "asc"
+  },
+  "isTwoWindow": false,
+  "isTileView": false,
+  "deleteWithoutConfirm": false
+}

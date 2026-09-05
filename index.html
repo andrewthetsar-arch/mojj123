@@ -1,0 +1,305 @@
+
+<!DOCTYPE html>
+
+<html lang="ru">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <title>SBP Terminal</title>
+
+  <style>
+
+    :root { --primary:#2563eb; --primary-h:#1d4ed8; --bg:#0f172a; --card:#1e293b; --c-in:#334155; --text:#f8fafc; --muted:#94a3b8; --border:#475569; --ok:#10b981; --err:#ef4444; }
+
+    * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+
+    body { background:var(--bg); color:var(--text); padding:24px; min-height:100vh; }
+
+    .hidden { display:none !important; }
+
+    .login-wrap { display:flex; align-items:center; justify-content:center; min-height:80vh; }
+
+    .login-card { background:var(--card); border:1px solid var(--border); border-radius:16px; width:100%; max-width:380px; padding:32px; }
+
+    .field { margin-bottom:14px; }
+
+    label { display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--muted); text-transform:uppercase; }
+
+    input, textarea { width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); font-size:14px; background:#0f172a; color:#fff; outline:none; }
+
+    button.btn { width:100%; padding:12px; background:var(--primary); color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; }
+
+    button.btn:hover { background:var(--primary-h); }
+
+    .err-box { color:var(--err); font-size:13px; margin-top:12px; text-align:center; background:rgba(239,68,68,0.1); padding:8px; border-radius:6px; display:none; }
+
+    .container { max-width:1200px; margin:0 auto; display:grid; grid-template-columns:380px 1fr; gap:24px; }
+
+    .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; }
+
+    .token-item { display:flex; justify-content:space-between; align-items:center; background:#0f172a; border:1px solid var(--border); border-radius:10px; padding:10px; margin-bottom:8px; }
+
+    .token-item.active { border-color:var(--primary); }
+
+    table { width:100%; border-collapse:collapse; font-size:13px; text-align:left; }
+
+    th, td { padding:12px; border-bottom:1px solid var(--border); }
+
+  </style>
+
+</head>
+
+<body>
+
+  <div id="loginView" class="login-wrap">
+
+    <div class="login-card">
+
+      <h2 style="margin-bottom:20px; text-align:center;">Вход в терминал</h2>
+
+      <form id="lForm">
+
+        <div class="field"><label>Логин</label><input type="text" id="lUser" value="jopa" required></div>
+
+        <div class="field"><label>Пароль</label><input type="password" id="lPass" value="qrnspkmeow" required></div>
+
+        <div class="field"><label>2FA Код</label><input type="text" id="lCode" maxlength="6" placeholder="000000" style="text-align:center;letter-spacing:4px;font-size:18px;" required></div>
+
+        <button type="submit" class="btn" id="lBtn">Войти</button>
+
+      </form>
+
+      <div id="lErr" class="err-box"></div>
+
+    </div>
+
+  </div>
+
+
+
+  <div id="termView" class="hidden">
+
+    <div style="max-width:1200px; margin:0 auto 20px auto; display:flex; justify-content:space-between; align-items:center;">
+
+      <h1>SBP Terminal</h1>
+
+      <div><span id="curAcc" style="color:#60a5fa;"></span> <button onclick="logout()" style="background:none;border:none;color:var(--err);cursor:pointer;margin-left:14px;">Выйти</button></div>
+
+    </div>
+
+    <div class="container">
+
+      <div class="card">
+
+        <h3>Выставить счёт</h3><br>
+
+        <form id="invForm">
+
+          <div class="field"><label>Услуга</label><input type="text" id="iName" value="Видеомонтаж" required></div>
+
+          <div class="field"><label>Сумма ₽</label><input type="number" id="iAmt" value="50" required></div>
+
+          <div class="field"><label>Email</label><input type="email" id="iMail" value="client@mail.ru" required></div>
+
+          <div class="field"><label>Телефон</label><input type="text" id="iPh" value="79531289740"></div>
+
+          <button type="submit" class="btn" id="iBtn">Сформировать QR</button>
+
+        </form>
+
+        <div id="qrRes" style="display:none; text-align:center; margin-top:15px;">
+
+          <img id="qrImg" src="" style="width:160px; background:#fff; padding:6px; border-radius:10px; margin:10px auto; display:block;">
+
+          <a id="qrLnk" href="#" target="_blank" style="color:#60a5fa;">Открыть в банке</a>
+
+        </div>
+
+        <hr style="margin:20px 0; border:0; border-top:1px solid var(--border);">
+
+        <h3>Токены</h3>
+
+        <div id="tokList" style="margin:12px 0;"></div>
+
+        <details>
+
+          <summary style="cursor:pointer; color:var(--primary);">+ Добавить аккаунт</summary>
+
+          <div class="field" style="margin-top:10px;"><label>Название</label><input type="text" id="tAlias"></div>
+
+          <div class="field"><label>Токен</label><textarea id="tVal" rows="3"></textarea></div>
+
+          <button class="btn" onclick="addTok()" style="background:var(--c-in);">Сохранить</button>
+
+        </details>
+
+      </div>
+
+      <div class="card">
+
+        <h3>История операций</h3><br>
+
+        <table><thead><tr><th>Дата</th><th>Счёт</th><th>Услуга</th><th>Сумма</th><th>Статус</th></tr></thead><tbody id="histBody"></tbody></table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <script>
+
+    const h = () => ({ 'Authorization': 'Bearer ' + (sessionStorage.getItem('tk')||''), 'Content-Type': 'application/json' });
+
+    async function start() {
+
+      const tk = sessionStorage.getItem('tk');
+
+      if (!tk) { showL(); return; }
+
+      const r = await fetch('/api/tokens', { headers: h() });
+
+      if (r.ok) { showT(); loadAll(); } else { sessionStorage.clear(); showL(); }
+
+    }
+
+    function showL() { document.getElementById('loginView').classList.remove('hidden'); document.getElementById('termView').classList.add('hidden'); }
+
+    function showT() { document.getElementById('loginView').classList.add('hidden'); document.getElementById('termView').classList.remove('hidden'); }
+
+    function logout() { sessionStorage.clear(); showL(); }
+
+
+
+    document.getElementById('lForm').onsubmit = async (e) => {
+
+      e.preventDefault();
+
+      const err = document.getElementById('lErr');
+
+      err.style.display = 'none';
+
+      sessionStorage.clear();
+
+      try {
+
+        const res = await fetch('/api/login', {
+
+          method: 'POST',
+
+          headers: {'Content-Type': 'application/json'},
+
+          body: JSON.stringify({ login: lUser.value.trim(), password: lPass.value.trim(), code_2fa: lCode.value.trim() })
+
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.detail || 'Ошибка входа');
+
+        sessionStorage.setItem('tk', data.token);
+
+        showT(); loadAll();
+
+      } catch (ex) {
+
+        err.innerText = ex.message;
+
+        err.style.display = 'block';
+
+      }
+
+    };
+
+
+
+    async function loadAll() {
+
+      const r1 = await fetch('/api/tokens', { headers: h() });
+
+      const d1 = await r1.json();
+
+      tokList.innerHTML = '';
+
+      let act = 'Не выбран';
+
+      (d1.tokens||[]).forEach(t => {
+
+        if (t.is_active) act = t.alias;
+
+        tokList.innerHTML += `<div class="token-item ${t.is_active?'active':''}"><div><b>${t.alias}</b><div style="font-size:11px;color:var(--muted);">${t.phone}</div></div><div>${!t.is_active?`<button onclick="selTok('${t.id}')">Выбрать</button>`:'Активен'} <button onclick="delTok('${t.id}')" style="color:var(--err);background:none;border:none;cursor:pointer;">✕</button></div></div>`;
+
+      });
+
+      curAcc.innerText = 'Аккаунт: ' + act;
+
+
+
+      const r2 = await fetch('/api/history', { headers: h() });
+
+      const d2 = await r2.json();
+
+      histBody.innerHTML = '';
+
+      (d2.history||[]).forEach(i => {
+
+        histBody.innerHTML += `<tr><td>${i.date}</td><td>#${i.invoice_id}</td><td>${i.name}</td><td><b>${i.amount} ₽</b></td><td>${i.is_paid?'✔ Оплачен':'⏳ Ожидает'}</td></tr>`;
+
+      });
+
+    }
+
+
+
+    async function addTok() {
+
+      await fetch('/api/tokens/add', { method: 'POST', headers: h(), body: JSON.stringify({ alias: tAlias.value, token: tVal.value }) });
+
+      tAlias.value = ''; tVal.value = ''; loadAll();
+
+    }
+
+    async function selTok(id) { await fetch('/api/tokens/set-active', { method: 'POST', headers: h(), body: JSON.stringify({ token_id: id }) }); loadAll(); }
+
+    async function delTok(id) { await fetch('/api/tokens/' + id, { method: 'DELETE', headers: h() }); loadAll(); }
+
+
+
+    document.getElementById('invForm').onsubmit = async (e) => {
+
+      e.preventDefault();
+
+      iBtn.disabled = true;
+
+      try {
+
+        const res = await fetch('/create-invoice', { method: 'POST', headers: h(), body: JSON.stringify({ name: iName.value, amount: parseFloat(iAmt.value), client_email: iMail.value, client_phone: iPh.value }) });
+
+        const d = await res.json();
+
+        if (!res.ok) throw new Error(d.detail);
+
+        qrImg.src = d.qr_base64; qrLnk.href = d.sbp_url; qrRes.style.display = 'block';
+
+        loadAll();
+
+      } catch(ex) { alert(ex.message); }
+
+      finally { iBtn.disabled = false; }
+
+    };
+
+
+
+    start();
+
+  </script>
+
+</body>
+
+</html>
+

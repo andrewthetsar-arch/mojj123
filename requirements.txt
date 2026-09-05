@@ -1,0 +1,8 @@
+httpx
+qrcode
+pyotp
+fastapi
+uvicorn
+pydantic
+python-multipart
+pillow

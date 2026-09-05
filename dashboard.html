@@ -1,0 +1,1107 @@
+
+<!DOCTYPE html>
+
+<html lang="ru">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <title>SBP Terminal Hub</title>
+
+  <style>
+
+    :root { --primary:#2563eb; --primary-hover:#1d4ed8; --bg:#0f172a; --card:#1e293b; --c-in:#334155; --text:#f8fafc; --muted:#94a3b8; --border:#475569; --err:#ef4444; --ok:#10b981; }
+
+    * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+
+    body { background:var(--bg); color:var(--text); padding:20px; min-height:100vh; }
+
+    .nav-bar { max-width:1200px; margin:0 auto 20px auto; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:14px; }
+
+    .nav-tabs { display:flex; gap:10px; }
+
+    .tab-btn { background:transparent; border:1px solid var(--border); color:var(--muted); padding:8px 16px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px; }
+
+    .tab-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+    .view-content { max-width:1200px; margin:0 auto; }
+
+    .hidden { display:none !important; }
+
+    .container { display:grid; grid-template-columns:460px 1fr; gap:24px; }
+
+    @media(max-width:950px){ .container { grid-template-columns:1fr; } }
+
+    .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; box-shadow:0 6px 20px rgba(0,0,0,0.25); }
+
+    .field { margin-bottom:14px; }
+
+    label { display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--muted); text-transform:uppercase; }
+
+    input, textarea, select { width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); font-size:14px; background:#0f172a; color:#fff; outline:none; }
+
+    input:focus, textarea:focus { border-color:var(--primary); }
+
+    button.btn { width:100%; padding:12px; background:var(--primary); color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; }
+
+    button.btn:hover { background:var(--primary-hover); }
+
+    
+
+    .token-item { background:#0f172a; border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px; }
+
+    .token-item.active { border-color:var(--primary); }
+
+    .token-header { display:flex; justify-content:space-between; align-items:center; }
+
+    .acc-link { font-size:15px; font-weight:bold; color:#fff; text-decoration:underline; cursor:pointer; }
+
+    .acc-link:hover { color:#60a5fa; }
+
+    
+
+    .status-badge { font-size:11px; padding:2px 6px; border-radius:4px; font-weight:600; }
+
+    .badge-ok { background:rgba(16,185,129,0.2); color:var(--ok); }
+
+    .badge-ref { background:rgba(59,130,246,0.2); color:#60a5fa; }
+
+    table { width:100%; border-collapse:collapse; font-size:13px; text-align:left; }
+
+    th, td { padding:12px; border-bottom:1px solid var(--border); }
+
+    .btn-sm { padding:8px 12px; border-radius:8px; border:none; font-size:13px; cursor:pointer; font-weight:600; }
+
+    .btn-sel { background:var(--c-in); color:#fff; }
+
+    .btn-del { background:none; color:var(--err); }
+
+    
+
+    .console-log { background:#090d16; border:1px solid #334155; border-radius:10px; padding:12px; margin-top:14px; font-family:"Fira Code", Consolas, monospace; font-size:11px; line-height:1.5; color:#38bdf8; max-height:170px; overflow-y:auto; text-align:left; white-space:pre-wrap; }
+
+    
+
+    .manual-layout { display:grid; grid-template-columns:360px 1fr; gap:24px; }
+
+    @media(max-width:850px){ .manual-layout { grid-template-columns:1fr; } }
+
+    .topic-badge { display:inline-block; font-size:11px; padding:3px 8px; border-radius:6px; background:rgba(37,99,235,0.2); color:#60a5fa; font-weight:600; margin-bottom:6px; }
+
+    .note-card { background:#0f172a; border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:14px; }
+
+    .note-card h4 { font-size:16px; margin-bottom:8px; }
+
+    .note-card p { font-size:13px; line-height:1.6; color:#cbd5e1; white-space:pre-wrap; }
+
+    .note-actions { display:flex; gap:8px; margin-top:12px; justify-content:flex-end; }
+
+    
+
+    .modal-backdrop { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:100; }
+
+    .modal-box { background:var(--card); border:1px solid var(--border); border-radius:16px; width:90%; max-width:540px; padding:24px; box-shadow:0 10px 30px rgba(0,0,0,0.6); }
+
+    .modal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:10px; }
+
+    .token-preview { background:#0f172a; padding:10px; border-radius:8px; font-family:monospace; font-size:12px; word-break:break-all; max-height:80px; overflow-y:auto; border:1px solid var(--border); margin-bottom:8px; }
+
+  </style>
+
+</head>
+
+<body>
+
+
+
+  <div class="nav-bar">
+
+    <div style="display:flex; align-items:center; gap:20px;">
+
+      <h2 style="font-size:20px;">SBP Terminal</h2>
+
+      <div class="nav-tabs">
+
+        <button class="tab-btn active" id="tabTerminalBtn" type="button" onclick="switchTab('terminal')">Терминал</button>
+
+        <button class="tab-btn" id="tabManualBtn" type="button" onclick="switchTab('manual')">Мануал</button>
+
+      </div>
+
+    </div>
+
+    <div style="display:flex; align-items:center; gap:16px;">
+
+      <span id="curAcc" style="color:#60a5fa; font-size:13px; font-weight:600;"></span>
+
+      <a href="/" style="color:var(--err);font-weight:600;text-decoration:none;font-size:13px;">Выйти</a>
+
+    </div>
+
+  </div>
+
+
+
+  <div id="viewTerminal" class="view-content">
+
+    <div class="container">
+
+      <div class="card">
+
+        <h3 style="margin-bottom:14px;">Выставить счёт</h3>
+
+        <form id="invForm">
+
+          <div class="field"><label>Услуга</label><input type="text" id="iName" value="Видеомонтаж" required></div>
+
+          <div class="field"><label>Сумма ₽</label><input type="number" id="iAmt" value="50" required></div>
+
+          <div class="field"><label>Email</label><input type="email" id="iMail" value="client@mail.ru" required></div>
+
+          <div class="field"><label>Телефон</label><input type="text" id="iPh" value="79531289740"></div>
+
+          <button type="submit" class="btn" id="iBtn">Сформировать QR</button>
+
+        </form>
+
+
+
+        <div id="logBox" class="console-log hidden"></div>
+
+
+
+        <div id="qrRes" style="display:none; text-align:center; margin-top:15px;">
+
+          <img id="qrImg" src="" style="width:160px; background:#fff; padding:6px; border-radius:10px; margin:10px auto; display:block;">
+
+          <a id="qrLnk" href="#" target="_blank" style="color:#60a5fa; font-weight:600; font-size:14px;">Открыть в приложении банка</a>
+
+        </div>
+
+        
+
+        <hr style="margin:20px 0; border:0; border-top:1px solid var(--border);">
+
+        
+
+        <h3 style="margin-bottom:10px;">Токены ФНС</h3>
+
+        <div id="tokList" style="margin:12px 0;"></div>
+
+        
+
+        <div style="background:#0f172a; padding:16px; border-radius:12px; border:1px solid var(--border); margin-top:16px;">
+
+          <h4 style="margin-bottom:10px; font-size:14px;">Добавить аккаунт (с автопродлением)</h4>
+
+          <div class="field"><label>Название / Алиас</label><input type="text" id="tAlias" placeholder="Например: Максим Л"></div>
+
+          <div class="field"><label>Access Токен (auth.token)</label><textarea id="tVal" rows="3" placeholder="Вставьте токен eyJ..."></textarea></div>
+
+          <div class="field"><label>Refresh Токен (refresh.token)</label><textarea id="tRef" rows="3" placeholder="Вставьте токен обновления"></textarea></div>
+
+          <div class="field"><label>Device ID (из консоли)</label><input type="text" id="tDev" value="3d472ef6-2b44-4e4b-851a-72211c4e75df"></div>
+
+          
+
+          <div style="display:flex; gap:10px;">
+
+            <button class="btn btn-sm" style="flex:1; background:#2563eb;" type="button" onclick="clientCheckToken()">Проверить</button>
+
+            <button class="btn btn-sm" style="flex:1; background:var(--ok);" type="button" id="saveTokBtn" onclick="saveNewToken()">Сохранить</button>
+
+          </div>
+
+          <div id="tokCheckResult" style="font-size:12px; margin-top:10px; display:none; padding:10px; border-radius:6px; word-break:break-all;"></div>
+
+        </div>
+
+      </div>
+
+      
+
+      <div class="card">
+
+        <h3 style="margin-bottom:14px;">История операций</h3>
+
+        <table><thead><tr><th>Дата</th><th>Счёт</th><th>Услуга</th><th>Сумма</th><th>Статус</th></tr></thead><tbody id="histBody"></tbody></table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div id="viewManual" class="view-content hidden">
+
+    <div class="manual-layout">
+
+      <div class="card">
+
+        <h3 id="noteFormTitle" style="margin-bottom:14px;">Новая запись</h3>
+
+        <input type="hidden" id="editNoteId" value="">
+
+        <div class="field"><label>Топик / Категория</label><input type="text" id="noteTopic" placeholder="Инструкции, Скрипты"></div>
+
+        <div class="field"><label>Заголовок</label><input type="text" id="noteTitle" placeholder="Суть заметки"></div>
+
+        <div class="field"><label>Текст заметки</label><textarea id="noteContent" rows="8" placeholder="Инструкции, команды..."></textarea></div>
+
+        <button class="btn" id="saveNoteBtn" type="button" onclick="saveNote()">Сохранить заметку</button>
+
+        <button class="btn btn-sm btn-sel hidden" id="cancelEditBtn" type="button" onclick="cancelEdit()" style="margin-top:8px; width:100%;">Отменить</button>
+
+      </div>
+
+
+
+      <div class="card">
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+
+          <h3>База знаний</h3>
+
+          <input type="text" id="searchNotes" onkeyup="filterNotes()" placeholder="Поиск..." style="width:200px; padding:6px 10px; font-size:13px;">
+
+        </div>
+
+        <div id="notesContainer">Загрузка заметок...</div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div id="accModal" class="modal-backdrop hidden">
+
+    <div class="modal-box">
+
+      <div class="modal-head">
+
+        <h3 id="modalAlias">Профиль аккаунта</h3>
+
+        <button class="btn-sm btn-del" onclick="closeModal()" style="font-size:18px;">✕</button>
+
+      </div>
+
+
+
+      <div style="margin-bottom:14px; font-size:13px;">
+
+        <p style="margin-bottom:6px;"><b>Телефон:</b> <span id="modalPhone">-</span></p>
+
+        <p style="margin-bottom:6px;"><b>Статус действия:</b> <span id="modalExpDate">-</span></p>
+
+        <p style="margin-bottom:6px;"><b>Автопродление:</b> <span id="modalRefStatus">-</span></p>
+
+      </div>
+
+
+
+      <div class="field">
+
+        <label>Актуальный Access токен</label>
+
+        <div id="modalTokenText" class="token-preview"></div>
+
+        <div style="display:flex; gap:10px;">
+
+          <button class="btn-sm btn-sel" style="flex:1;" onclick="copyModalToken()">📋 Скопировать</button>
+
+          <button class="btn-sm" style="flex:1; background:#2563eb;" id="modalRefreshBtn" onclick="refreshFromModal()">⟳ Продлить в ФНС</button>
+
+        </div>
+
+      </div>
+
+
+
+      <hr style="margin:16px 0; border:0; border-top:1px solid var(--border);">
+
+
+
+      <div class="field">
+
+        <label>Refresh Токен для автопродления</label>
+
+        <textarea id="modalRefreshToken" rows="2" placeholder="refresh.token"></textarea>
+
+        <button class="btn-sm" style="margin-top:8px; width:100%; background:var(--c-in);" onclick="saveModalRefresh()">Сохранить Refresh токен</button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <script>
+
+    var currentModalAccId = null;
+
+    var allNotes = [];
+
+
+
+    function switchTab(tab) {
+
+      if (tab === 'terminal') {
+
+        document.getElementById('tabTerminalBtn').className = 'tab-btn active';
+
+        document.getElementById('tabManualBtn').className = 'tab-btn';
+
+        document.getElementById('viewTerminal').className = 'view-content';
+
+        document.getElementById('viewManual').className = 'view-content hidden';
+
+      } else {
+
+        document.getElementById('tabTerminalBtn').className = 'tab-btn';
+
+        document.getElementById('tabManualBtn').className = 'tab-btn active';
+
+        document.getElementById('viewTerminal').className = 'view-content hidden';
+
+        document.getElementById('viewManual').className = 'view-content';
+
+        loadNotes();
+
+      }
+
+    }
+
+
+
+    async function clientCheckToken() {
+
+      var box = document.getElementById('tokCheckResult');
+
+      var val = document.getElementById('tVal').value.trim();
+
+      val = val.replace(/^Bearer/i, '').replace(/[\r\n\s]+/g, '');
+
+      
+
+      if (!val) { alert('Вставьте Access токен в поле!'); return; }
+
+
+
+      box.style.display = 'block';
+
+      box.style.background = '#1e293b';
+
+      box.style.color = '#94a3b8';
+
+      box.innerText = '⏳ Проверяем токен напрямую через шлюз ФНС...';
+
+
+
+      try {
+
+        var res = await fetch('/api/tokens/verify-live', {
+
+          method: 'POST',
+
+          headers: { 'Content-Type': 'application/json' },
+
+          body: JSON.stringify({ token: val })
+
+        });
+
+        var d = await res.json();
+
+        
+
+        if (d.valid) {
+
+          box.style.background = 'rgba(16,185,129,0.15)';
+
+          box.style.color = 'var(--ok)';
+
+          box.innerHTML = '✔ <b>Токен активен в ФНС!</b><br>ФИО: ' + d.fio + ' | ИНН: ' + d.inn + ' | Тел: +' + d.phone;
+
+        } else {
+
+          box.style.background = 'rgba(239,68,68,0.15)';
+
+          box.style.color = 'var(--err)';
+
+          box.innerHTML = '✖ <b>Токен недействителен:</b> ' + (d.detail || 'Отклонён сервисом');
+
+        }
+
+      } catch (err) {
+
+        box.style.background = 'rgba(239,68,68,0.15)';
+
+        box.style.color = 'var(--err)';
+
+        box.innerText = '✖ Ошибка связи с бэкендом при проверке';
+
+      }
+
+    }
+
+
+
+    async function openProfile(id) {
+
+      currentModalAccId = id;
+
+      try {
+
+        var res = await fetch('/api/tokens/details/' + id);
+
+        var d = await res.json();
+
+        if (!res.ok) throw new Error(d.detail);
+
+
+
+        document.getElementById('modalAlias').innerText = d.alias;
+
+        document.getElementById('modalPhone').innerText = '+' + d.phone;
+
+        document.getElementById('modalExpDate').innerHTML = d.exp_date + (d.is_expired ? ' <span style="color:var(--err);">(Истёк)</span>' : ' <span style="color:var(--ok);">(Активен)</span>');
+
+        
+
+        var refStat = document.getElementById('modalRefStatus');
+
+        if (d.has_refresh) {
+
+          refStat.innerHTML = '<span class="status-badge badge-ref">Включено (Refresh OK)</span>';
+
+        } else {
+
+          refStat.innerHTML = '<span class="status-badge" style="background:rgba(239,68,68,0.2);color:var(--err);">Выключено</span>';
+
+        }
+
+
+
+        document.getElementById('modalTokenText').innerText = d.token;
+
+        document.getElementById('modalRefreshToken').value = d.refresh_token;
+
+        document.getElementById('accModal').classList.remove('hidden');
+
+      } catch(e) {
+
+        alert('Ошибка: ' + e.message);
+
+      }
+
+    }
+
+
+
+    function closeModal() {
+
+      document.getElementById('accModal').classList.add('hidden');
+
+      currentModalAccId = null;
+
+    }
+
+
+
+    function copyModalToken() {
+
+      var tok = document.getElementById('modalTokenText').innerText;
+
+      navigator.clipboard.writeText(tok);
+
+      alert('Токен скопирован в буфер обмена!');
+
+    }
+
+
+
+    async function refreshFromModal() {
+
+      var btn = document.getElementById('modalRefreshBtn');
+
+      btn.disabled = true;
+
+      btn.innerText = 'Продление...';
+
+      try {
+
+        var res = await fetch('/api/tokens/refresh/' + currentModalAccId, { method: 'POST' });
+
+        var d = await res.json();
+
+        if (!res.ok) throw new Error(d.detail);
+
+        alert('Токен успешно обновлён в ФНС! Новый срок до: ' + d.new_exp);
+
+        openProfile(currentModalAccId);
+
+        loadTokens();
+
+      } catch(e) {
+
+        alert('Ошибка продления: ' + e.message);
+
+      } finally {
+
+        btn.disabled = false;
+
+        btn.innerText = '⟳ Продлить в ФНС';
+
+      }
+
+    }
+
+
+
+    async function saveModalRefresh() {
+
+      var refVal = document.getElementById('modalRefreshToken').value.trim();
+
+      if (!refVal) { alert('Вставьте Refresh токен!'); return; }
+
+      try {
+
+        var res = await fetch('/api/tokens/update-refresh', {
+
+          method: 'POST',
+
+          headers: { 'Content-Type': 'application/json' },
+
+          body: JSON.stringify({ account_id: currentModalAccId, refresh_token: refVal })
+
+        });
+
+        if (!res.ok) throw new Error('Ошибка сохранения');
+
+        alert('Refresh токен успешно сохранён!');
+
+        openProfile(currentModalAccId);
+
+        loadTokens();
+
+      } catch(e) {
+
+        alert(e.message);
+
+      }
+
+    }
+
+
+
+    async function saveNewToken() {
+
+      var btn = document.getElementById('saveTokBtn');
+
+      var alias = document.getElementById('tAlias').value.trim();
+
+      var token = document.getElementById('tVal').value.trim().replace(/^Bearer/i, '').replace(/[\r\n\s]+/g, '');
+
+      var refTok = document.getElementById('tRef').value.trim().replace(/^Bearer/i, '').replace(/[\r\n\s]+/g, '');
+
+      var devId = document.getElementById('tDev').value.trim();
+
+
+
+      if (!token) { alert('Вставьте токен!'); return; }
+
+
+
+      btn.disabled = true;
+
+      try {
+
+        var res = await fetch('/api/tokens/add', {
+
+          method: 'POST',
+
+          headers: { 'Content-Type': 'application/json' },
+
+          body: JSON.stringify({ alias: alias, token: token, refresh_token: refTok, device_id: devId })
+
+        });
+
+        var d = await res.json();
+
+        if (!res.ok) throw new Error(d.detail);
+
+
+
+        document.getElementById('tAlias').value = '';
+
+        document.getElementById('tVal').value = '';
+
+        document.getElementById('tRef').value = '';
+
+        document.getElementById('tokCheckResult').style.display = 'none';
+
+        alert('Аккаунт успешно сохранён!');
+
+        loadTokens();
+
+      } catch (err) {
+
+        alert(err.message);
+
+      } finally {
+
+        btn.disabled = false;
+
+      }
+
+    }
+
+
+
+    async function loadTokens() {
+
+      try {
+
+        var res = await fetch('/api/tokens');
+
+        var d = await res.json();
+
+        var tokList = document.getElementById('tokList');
+
+        tokList.innerHTML = '';
+
+        var act = 'Не выбран';
+
+
+
+        (d.tokens || []).forEach(function(t) {
+
+          if (t.is_active) act = t.alias;
+
+          var btnAct = t.is_active 
+
+            ? '<span class="status-badge badge-ok">Активен</span>' 
+
+            : '<button class="btn-sm btn-sel" onclick="selTok(\'' + t.id + '\')">Выбрать</button>';
+
+          
+
+          var refBadge = t.has_refresh ? '<span class="status-badge badge-ref">Автопродление ON</span>' : '';
+
+
+
+          var div = document.createElement('div');
+
+          div.className = 'token-item ' + (t.is_active ? 'active' : '');
+
+          div.innerHTML = 
+
+            '<div class="token-header">' +
+
+              '<div>' +
+
+                '<span class="acc-link" onclick="openProfile(\'' + t.id + '\')">' + t.alias + '</span> ' + refBadge +
+
+                '<div style="font-size:11px;color:var(--muted);margin-top:2px;">' + t.phone + ' | Истекает: ' + t.exp_date + '</div>' +
+
+              '</div>' +
+
+              '<div style="display:flex; gap:6px; align-items:center;">' +
+
+                btnAct + 
+
+                '<button class="btn-sm btn-del" onclick="delTok(\'' + t.id + '\')">✕</button>' +
+
+              '</div>' +
+
+            '</div>';
+
+          tokList.appendChild(div);
+
+        });
+
+
+
+        document.getElementById('curAcc').innerText = 'Аккаунт: ' + act;
+
+      } catch(e){}
+
+    }
+
+
+
+    async function selTok(id) {
+
+      await fetch('/api/tokens/set-active', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token_id: id }) });
+
+      loadTokens();
+
+    }
+
+
+
+    async function delTok(id) {
+
+      if (!confirm('Удалить этот аккаунт?')) return;
+
+      await fetch('/api/tokens/' + id, { method: 'DELETE' });
+
+      loadTokens();
+
+    }
+
+
+
+    async function loadHistory() {
+
+      try {
+
+        var res = await fetch('/api/history');
+
+        var d = await res.json();
+
+        var histBody = document.getElementById('histBody');
+
+        histBody.innerHTML = '';
+
+        (d.history || []).forEach(function(i) {
+
+          histBody.innerHTML += '<tr><td>' + i.date + '</td><td>#' + i.invoice_id + '</td><td>' + i.name + '</td><td><b>' + i.amount + ' ₽</b></td><td>' + (i.is_paid ? '✔ Оплачен' : '⏳ Ожидает') + '</td></tr>';
+
+        });
+
+      } catch(e){}
+
+    }
+
+
+
+    // Имитируем пошаговый живой лог на клиенте без ожидания прокси-буферизации
+
+    document.getElementById('invForm').onsubmit = async function(e) {
+
+      e.preventDefault();
+
+      var btn = document.getElementById('iBtn');
+
+      var logBox = document.getElementById('logBox');
+
+      
+
+      btn.disabled = true;
+
+      btn.innerText = 'Формирование...';
+
+      logBox.classList.remove('hidden');
+
+      logBox.innerHTML = '';
+
+
+
+      var nowStr = () => new Date().toTimeString().split(' ')[0] + '.' + String(Math.floor(Math.performance ? performance.now() % 1000 : Math.random()*1000)).padStart(3, '0');
+
+
+
+      var addLog = (text) => {
+
+        logBox.innerHTML += '[' + nowStr() + '] ' + text + '\n';
+
+        logBox.scrollTop = logBox.scrollHeight;
+
+      };
+
+
+
+      addLog('🚀 Инициализация запроса формирования счёта на ' + document.getElementById('iAmt').value + ' ₽');
+
+      addLog('📂 Чтение базы SQLite: поиск активного аккаунта...');
+
+      
+
+      await new Promise(r => setTimeout(r, 200));
+
+      addLog('🔑 Проверка срока жизни Access Токена...');
+
+
+
+      await new Promise(r => setTimeout(r, 200));
+
+      addLog('📤 [POST] Отправка чека в ФНС (lknpd.nalog.ru)...');
+
+
+
+      try {
+
+        var startTime = Date.now();
+
+        var res = await fetch('/create-invoice', {
+
+          method: 'POST',
+
+          headers: { 'Content-Type': 'application/json' },
+
+          body: JSON.stringify({
+
+            name: document.getElementById('iName').value,
+
+            amount: parseFloat(document.getElementById('iAmt').value),
+
+            client_email: document.getElementById('iMail').value,
+
+            client_phone: document.getElementById('iPh').value
+
+          })
+
+        });
+
+        var d = await res.json();
+
+        var duration = Date.now() - startTime;
+
+
+
+        if (!res.ok) throw new Error(d.detail || 'Ошибка сервера');
+
+
+
+        addLog('📥 [200 OK] Ответ от ФНС получен за ' + duration + 'мс');
+
+        
+
+        if (d.logs && d.logs.length > 2) {
+
+          // Пропускаем начальные дубли, выводим расширенные шаги ответа
+
+          d.logs.slice(2).forEach(l => {
+
+            // Убираем старый таймстамп бэкенда, красиво оформляем
+
+            var clean = l.replace(/^\[.*?\]\s*/, '');
+
+            addLog(clean);
+
+          });
+
+        }
+
+
+
+        document.getElementById('qrImg').src = d.qr_base64;
+
+        document.getElementById('qrLnk').href = d.sbp_url;
+
+        document.getElementById('qrRes').style.display = 'block';
+
+        loadHistory();
+
+      } catch(ex) {
+
+        addLog('✖ ОШИБКА: ' + ex.message);
+
+        alert(ex.message);
+
+      } finally {
+
+        btn.disabled = false;
+
+        btn.innerText = 'Сформировать QR';
+
+      }
+
+    };
+
+
+
+    async function loadNotes() {
+
+      var c = document.getElementById('notesContainer');
+
+      try {
+
+        var res = await fetch('/api/manual');
+
+        allNotes = await res.json();
+
+        renderNotes(allNotes);
+
+      } catch(e) {
+
+        c.innerHTML = '<div style="color:var(--err);">Ошибка загрузки заметок</div>';
+
+      }
+
+    }
+
+
+
+    function renderNotes(notes) {
+
+      var c = document.getElementById('notesContainer');
+
+      if (!notes || !notes.length) {
+
+        c.innerHTML = '<div style="color:var(--muted); font-size:13px; text-align:center; padding:20px;">Заметок пока нет.</div>';
+
+        return;
+
+      }
+
+      var html = '';
+
+      notes.forEach(function(n) {
+
+        html += 
+
+          '<div class="note-card">' +
+
+            '<span class="topic-badge">' + n.topic + '</span>' +
+
+            '<h4>' + n.title + '</h4>' +
+
+            '<p>' + n.content + '</p>' +
+
+            '<div style="font-size:11px; color:var(--muted); margin-top:8px;">Обновлено: ' + n.updated_at + '</div>' +
+
+            '<div class="note-actions">' +
+
+              '<button class="btn-sm btn-sel" onclick="startEditNote(' + n.id + ')">Редактировать</button>' +
+
+              '<button class="btn-sm btn-del" onclick="deleteNote(' + n.id + ')">Удалить</button>' +
+
+            '</div>' +
+
+          '</div>';
+
+      });
+
+      c.innerHTML = html;
+
+    }
+
+
+
+    function filterNotes() {
+
+      var q = document.getElementById('searchNotes').value.toLowerCase();
+
+      var filtered = allNotes.filter(function(n) {
+
+        return (n.topic && n.topic.toLowerCase().indexOf(q) !== -1) ||
+
+               (n.title && n.title.toLowerCase().indexOf(q) !== -1) ||
+
+               (n.content && n.content.toLowerCase().indexOf(q) !== -1);
+
+      });
+
+      renderNotes(filtered);
+
+    }
+
+
+
+    async function saveNote() {
+
+      var id = document.getElementById('editNoteId').value;
+
+      var topic = document.getElementById('noteTopic').value.trim();
+
+      var title = document.getElementById('noteTitle').value.trim();
+
+      var content = document.getElementById('noteContent').value.trim();
+
+
+
+      if (!topic || !title || !content) { alert('Заполните все поля!'); return; }
+
+
+
+      var url = id ? '/api/manual/update' : '/api/manual/add';
+
+      var payload = id ? { id: parseInt(id), topic, title, content } : { topic, title, content };
+
+
+
+      await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+
+      cancelEdit();
+
+      loadNotes();
+
+    }
+
+
+
+    function startEditNote(id) {
+
+      var note = allNotes.find(function(n) { return n.id === id; });
+
+      if (!note) return;
+
+      document.getElementById('editNoteId').value = note.id;
+
+      document.getElementById('noteTopic').value = note.topic;
+
+      document.getElementById('noteTitle').value = note.title;
+
+      document.getElementById('noteContent').value = note.content;
+
+      document.getElementById('noteFormTitle').innerText = 'Редактировать запись';
+
+      document.getElementById('saveNoteBtn').innerText = 'Сохранить изменения';
+
+      document.getElementById('cancelEditBtn').className = 'btn btn-sm btn-sel';
+
+    }
+
+
+
+    function cancelEdit() {
+
+      document.getElementById('editNoteId').value = '';
+
+      document.getElementById('noteTopic').value = '';
+
+      document.getElementById('noteTitle').value = '';
+
+      document.getElementById('noteContent').value = '';
+
+      document.getElementById('noteFormTitle').innerText = 'Новая запись';
+
+      document.getElementById('saveNoteBtn').innerText = 'Сохранить заметку';
+
+      document.getElementById('cancelEditBtn').className = 'btn btn-sm btn-sel hidden';
+
+    }
+
+
+
+    async function deleteNote(id) {
+
+      if (!confirm('Удалить заметку?')) return;
+
+      await fetch('/api/manual/' + id, { method: 'DELETE' });
+
+      loadNotes();
+
+    }
+
+
+
+    loadTokens();
+
+    loadHistory();
+
+  </script>
+
+</body>
+
+</html>
+
