@@ -318,7 +318,7 @@ async def create_inv(p: InvoiceModel, x_api_key: str = Header(None)):
         b64 = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
         async with pool.acquire() as conn:
             await conn.execute("INSERT INTO invoices VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
-                inv_id, datetime.now().strftime("%d.%m %H:%M"), p.name, p.amount,
+                str(inv_id), datetime.now().strftime("%d.%m %H:%M"), p.name, p.amount,
                 p.client_email, acc["alias"], 0, sbp_url)
         return {"status": "ok", "invoice_id": inv_id, "sbp_url": sbp_url, "qr_base64": b64}
 
