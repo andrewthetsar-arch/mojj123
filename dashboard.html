@@ -373,7 +373,9 @@
 
         document.getElementById('viewManual').className = 'view-content';
 
-        loadNotes();
+        if (!allNotes || allNotes.length === 0) {
+          loadNotes();
+        }
 
       }
 
@@ -1033,7 +1035,6 @@
 
       cancelEdit();
 
-      loadNotes();
 
     }
 
@@ -1089,7 +1090,6 @@
 
       await fetch('/api/manual/' + id, { method: 'DELETE' });
 
-      loadNotes();
 
     }
 
