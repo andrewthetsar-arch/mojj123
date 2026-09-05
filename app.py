@@ -7,7 +7,6 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-# Автоматически определяем папку, где лежит этот скрипт (динамические пути для хостинга)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(BASE_DIR, "database.sqlite")
 HTML_FILE = os.path.join(BASE_DIR, "dashboard.html")
@@ -19,10 +18,16 @@ AUTH_PASS = "qrnspkmeow"
 AUTH_2FA_SECRET = "33QXNNYICMQA6J7J"
 
 def init_db():
+    # Удаляем старый файл базы, если в нём не хватало колонок или таблиц
+    if os.path.exists(DB_FILE):
+        try:
+            os.remove(DB_FILE)
+        except:
+            pass
+
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
     
-    # Таблица аккаунтов
     conn.execute('''CREATE TABLE IF NOT EXISTS accounts (
                     id TEXT PRIMARY KEY,
                     alias TEXT,
@@ -35,7 +40,6 @@ def init_db():
                     created_at TEXT
                 )''')
     
-    # Таблица базы знаний (заметок)
     conn.execute('''CREATE TABLE IF NOT EXISTS manual_notes (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     topic TEXT,
@@ -44,7 +48,6 @@ def init_db():
                     updated_at TEXT
                 )''')
     
-    # Таблица истории счетов
     conn.execute('''CREATE TABLE IF NOT EXISTS invoices (
                     invoice_id TEXT PRIMARY KEY,
                     date TEXT,
@@ -55,12 +58,6 @@ def init_db():
                     is_paid INTEGER,
                     sbp_url TEXT
                 )''')
-
-    # Добавляем колонку device_id если база уже была создана без неё
-    try:
-        conn.execute("ALTER TABLE accounts ADD COLUMN device_id TEXT")
-    except:
-        pass
         
     conn.commit()
     conn.close()
