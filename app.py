@@ -333,7 +333,8 @@ async def create_invoice_stream(p: InvoiceModel):
             if not acc:
                 yield f"data: {json.dumps({'error': 'Нет активного аккаунта!'})}\n\n"
                 return
-            yield f"data: {json.dumps({'log': f'[{now_t()}] Профиль: {acc[chr(34)]alias{chr(34)]}'})}\n\n"
+            alias_name = acc['alias']
+            yield f"data: {json.dumps({'log': f'[{now_t()}] Профиль: {alias_name}'})}\n\n"
             token_fns = await get_valid_token(acc["id"])
             phone = re.sub(r"\D", "", p.client_phone or "")
             payload = {"acquirerId": 833, "clientName": p.client_name, "clientPhone": phone,
